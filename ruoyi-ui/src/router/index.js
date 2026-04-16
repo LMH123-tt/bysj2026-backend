@@ -52,6 +52,31 @@ export const constantRoutes = [
     hidden: true
   },
   {
+    path: '/content/login',
+    component: () => import('@/views/content/login'),
+    hidden: true
+  },
+  {
+    path: '/content/register',
+    component: () => import('@/views/content/register'),
+    hidden: true
+  },
+  {
+    path: '/content/home',
+    component: () => import('@/views/content/home'),
+    hidden: true
+  },
+  {
+    path: '/content/detail/:contentId',
+    component: () => import('@/views/content/detail'),
+    hidden: true
+  },
+  {
+    path: '/content/profile',
+    component: () => import('@/views/content/profile'),
+    hidden: true
+  },
+  {
     path: '/404',
     component: () => import('@/views/error/404'),
     hidden: true

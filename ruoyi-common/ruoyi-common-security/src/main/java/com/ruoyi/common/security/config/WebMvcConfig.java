@@ -1,5 +1,7 @@
 package com.ruoyi.common.security.config;
 
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import com.ruoyi.common.security.interceptor.HeaderInterceptor;
@@ -9,6 +11,7 @@ import com.ruoyi.common.security.interceptor.HeaderInterceptor;
  *
  * @author ruoyi
  */
+@Configuration
 public class WebMvcConfig implements WebMvcConfigurer
 {
     /** 不需要拦截地址 */
@@ -17,7 +20,7 @@ public class WebMvcConfig implements WebMvcConfigurer
     @Override
     public void addInterceptors(InterceptorRegistry registry)
     {
-        registry.addInterceptor(getHeaderInterceptor())
+        registry.addInterceptor(headerInterceptor())
                 .addPathPatterns("/**")
                 .excludePathPatterns(excludeUrls)
                 .order(-10);
@@ -26,7 +29,8 @@ public class WebMvcConfig implements WebMvcConfigurer
     /**
      * 自定义请求头拦截器
      */
-    public HeaderInterceptor getHeaderInterceptor()
+    @Bean
+    public HeaderInterceptor headerInterceptor()
     {
         return new HeaderInterceptor();
     }

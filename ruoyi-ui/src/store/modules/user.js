@@ -45,7 +45,6 @@ const user = {
   },
 
   actions: {
-    // 登录
     Login({ commit }, userInfo) {
       const username = userInfo.username.trim()
       const password = userInfo.password
@@ -53,11 +52,12 @@ const user = {
       const uuid = userInfo.uuid
       return new Promise((resolve, reject) => {
         login(username, password, code, uuid).then(res => {
-          let data = res.data
-          setToken(data.access_token)
-          commit('SET_TOKEN', data.access_token)
-          setExpiresIn(data.expires_in)
-          commit('SET_EXPIRES_IN', data.expires_in)
+          const token = res.data.access_token
+          const expiresIn = res.data.expires_in
+          setToken(token)
+          commit('SET_TOKEN', token)
+          setExpiresIn(expiresIn)
+          commit('SET_EXPIRES_IN', expiresIn)
           store.dispatch('lock/unlockScreen')
           resolve()
         }).catch(error => {
@@ -66,13 +66,12 @@ const user = {
       })
     },
 
-    // 获取用户信息
     GetInfo({ commit, state }) {
       return new Promise((resolve, reject) => {
         getInfo().then(res => {
           const user = res.user
           const avatar = (isEmpty(user.avatar)) ? defAva : user.avatar
-          if (res.roles && res.roles.length > 0) { // 验证返回的roles是否是一个非空数组
+          if (res.roles && res.roles.length > 0) {
             commit('SET_ROLES', res.roles)
             commit('SET_PERMISSIONS', res.permissions)
           } else {
@@ -82,13 +81,11 @@ const user = {
           commit('SET_NAME', user.userName)
           commit('SET_NICK_NAME', user.nickName)
           commit('SET_AVATAR', avatar)
-          /* 初始密码提示 */
           if(res.isDefaultModifyPwd) {
             MessageBox.confirm('您的密码还是初始密码，请修改密码！',  '安全提示', {  confirmButtonText: '确定',  cancelButtonText: '取消',  type: 'warning' }).then(() => {
               router.push({ name: 'Profile', params: { activeTab: 'resetPwd' } })
             }).catch(() => {})
           }
-          /* 过期密码提示 */
           if(!res.isDefaultModifyPwd && res.isPasswordExpired) {
             MessageBox.confirm('您的密码已过期，请尽快修改密码！',  '安全提示', {  confirmButtonText: '确定',  cancelButtonText: '取消',  type: 'warning' }).then(() => {
               router.push({ name: 'Profile', params: { activeTab: 'resetPwd' } })
@@ -101,7 +98,6 @@ const user = {
       })
     },
 
-    // 刷新token
     RefreshToken({commit, state}) {
       return new Promise((resolve, reject) => {
         refreshToken(state.token).then(res => {
@@ -114,7 +110,6 @@ const user = {
       })
     },
     
-    // 退出系统
     LogOut({ commit, state }) {
       return new Promise((resolve, reject) => {
         logout(state.token).then(() => {
@@ -129,7 +124,6 @@ const user = {
       })
     },
 
-    // 前端 登出
     FedLogOut({ commit }) {
       return new Promise(resolve => {
         commit('SET_TOKEN', '')
