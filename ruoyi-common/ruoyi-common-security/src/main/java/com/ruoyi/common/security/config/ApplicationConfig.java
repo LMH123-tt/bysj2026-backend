@@ -20,7 +20,7 @@ public class ApplicationConfig
     {
         ObjectMapper objectMapper = JsonMapper.builder().build();
         objectMapper.findAndRegisterModules();
-        objectMapper.setTimeZone(TimeZone.getDefault());
+        objectMapper.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
         return objectMapper;
     }
 }

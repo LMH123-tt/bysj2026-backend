@@ -46,12 +46,34 @@ public class AuthFilter implements GlobalFilter, Ordered
         ServerHttpRequest.Builder mutate = request.mutate();
 
         String url = request.getURI().getPath();
-        // 跳过不需要验证的路径
+        String token = getToken(request);
         if (StringUtils.matches(url, ignoreWhite.getWhites()))
         {
+            if (StringUtils.isNotEmpty(token))
+            {
+                try {
+                    Claims claims = JwtUtils.parseToken(token);
+                    if (claims != null)
+                    {
+                        String userkey = JwtUtils.getUserKey(claims);
+                        if (redisService.hasKey(getTokenKey(userkey)))
+                        {
+                            String userid = JwtUtils.getUserId(claims);
+                            String username = JwtUtils.getUserName(claims);
+                            if (StringUtils.isNotEmpty(userid) && StringUtils.isNotEmpty(username))
+                            {
+                                addHeader(mutate, SecurityConstants.USER_KEY, userkey);
+                                addHeader(mutate, SecurityConstants.DETAILS_USER_ID, userid);
+                                addHeader(mutate, SecurityConstants.DETAILS_USERNAME, username);
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+                removeHeader(mutate, SecurityConstants.FROM_SOURCE);
+                return chain.filter(exchange.mutate().request(mutate.build()).build());
+            }
             return chain.filter(exchange);
         }
-        String token = getToken(request);
         if (StringUtils.isEmpty(token))
         {
             return unauthorizedResponse(exchange, "令牌不能为空");
