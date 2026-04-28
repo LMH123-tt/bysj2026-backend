@@ -1,0 +1,21 @@
+server:
+  port: 9401
+
+spring:
+  application:
+    name: ruoyi-content
+  profiles:
+    active: dev
+  config:
+    file-extension: yml
+    import:
+      - nacos:application-${spring.profiles.active}.${spring.config.file-extension}
+      - nacos:${spring.application.name}-${spring.profiles.active}.${spring.config.file-extension}
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        ip: 127.0.0.1
+      config:
+        server-addr: 127.0.0.1:8848
+        file-extension: yml
