@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.content.mapper.ContentCategoryMapper">
+    
+    <resultMap type="ContentCategory" id="ContentCategoryResult">
+        <result property="categoryId"       column="category_id"       />
+        <result property="categoryName"     column="category_name"     />
+        <result property="parentId"         column="parent_id"         />
+        <result property="orderNum"         column="order_num"         />
+        <result property="status"           column="status"            />
+        <result property="icon"             column="icon"              />
+        <result property="description"      column="description"       />
+        <result property="contentCount"     column="content_count"     />
+        <result property="createBy"         column="create_by"         />
+        <result property="createTime"       column="create_time"       />
+        <result property="updateBy"         column="update_by"         />
+        <result property="updateTime"       column="update_time"       />
+        <result property="remark"           column="remark"            />
+    </resultMap>
+
+    <sql id="selectContentCategoryVo">
+        select category_id, category_name, parent_id, order_num, status, icon, description, content_count, create_by, create_time, update_by, update_time, remark from content_category
+    </sql>
+
+    <select id="selectContentCategoryList" parameterType="ContentCategory" resultMap="ContentCategoryResult">
+        <include refid="selectContentCategoryVo"/>
+        <where>  
+            <if test="categoryName != null  and categoryName != ''"> and category_name like concat('%', #{categoryName}, '%')</if>
+            <if test="parentId != null "> and parent_id = #{parentId}</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+        </where>
+        order by order_num asc
+    </select>
+    
+    <select id="selectContentCategoryListEnabled" resultMap="ContentCategoryResult">
+        <include refid="selectContentCategoryVo"/>
+        where status = '0'
+        order by order_num asc
+    </select>
+    
+    <select id="selectContentCategoryByCategoryId" parameterType="Long" resultMap="ContentCategoryResult">
+        <include refid="selectContentCategoryVo"/>
+        where category_id = #{categoryId}
+    </select>
+        
+    <insert id="insertContentCategory" parameterType="ContentCategory" useGeneratedKeys="true" keyProperty="categoryId">
+        insert into content_category
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="categoryName != null and categoryName != ''">category_name,</if>
+            <if test="parentId != null">parent_id,</if>
+            <if test="orderNum != null">order_num,</if>
+            <if test="status != null">status,</if>
+            <if test="icon != null">icon,</if>
+            <if test="description != null">description,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="categoryName != null and categoryName != ''">#{categoryName},</if>
+            <if test="parentId != null">#{parentId},</if>
+            <if test="orderNum != null">#{orderNum},</if>
+            <if test="status != null">#{status},</if>
+            <if test="icon != null">#{icon},</if>
+            <if test="description != null">#{description},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateContentCategory" parameterType="ContentCategory">
+        update content_category
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="categoryName != null and categoryName != ''">category_name = #{categoryName},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where category_id = #{categoryId}
+    </update>
+
+    <delete id="deleteContentCategoryByCategoryId" parameterType="Long">
+        delete from content_category where category_id = #{categoryId}
+    </delete>
+
+    <delete id="deleteContentCategoryByCategoryIds" parameterType="String">
+        delete from content_category where category_id in 
+        <foreach item="categoryId" collection="array" open="(" separator="," close=")">
+            #{categoryId}
+        </foreach>
+    </delete>
+
+</mapper>

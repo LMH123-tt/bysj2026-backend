@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.content.mapper.ContentLikeMapper">
+
+    <resultMap type="com.ruoyi.content.domain.ContentLike" id="ContentLikeResult">
+        <result property="likeId"    column="like_id"    />
+        <result property="contentId" column="content_id" />
+        <result property="userId"    column="user_id"    />
+        <result property="createTime" column="create_time" />
+    </resultMap>
+
+    <select id="selectByUserAndContent" resultMap="ContentLikeResult">
+        select like_id, content_id, user_id, create_time
+        from content_like
+        where user_id = #{userId} and content_id = #{contentId}
+    </select>
+
+    <insert id="insertContentLike" parameterType="com.ruoyi.content.domain.ContentLike" useGeneratedKeys="true" keyProperty="likeId">
+        insert into content_like (content_id, user_id, create_time)
+        values (#{contentId}, #{userId}, sysdate())
+    </insert>
+
+    <delete id="deleteByUserAndContent">
+        delete from content_like where user_id = #{userId} and content_id = #{contentId}
+    </delete>
+
+</mapper>

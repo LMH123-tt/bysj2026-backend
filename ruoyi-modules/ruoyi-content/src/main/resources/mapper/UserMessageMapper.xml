@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.content.mapper.UserMessageMapper">
+
+    <resultMap type="com.ruoyi.content.domain.UserMessage" id="UserMessageResult">
+        <result property="id" column="id"/>
+        <result property="senderId" column="sender_id"/>
+        <result property="receiverId" column="receiver_id"/>
+        <result property="content" column="content"/>
+        <result property="isRead" column="is_read"/>
+        <result property="createTime" column="create_time"/>
+        <result property="senderName" column="sender_name"/>
+        <result property="senderAvatar" column="sender_avatar"/>
+        <result property="receiverName" column="receiver_name"/>
+    </resultMap>
+
+    <select id="selectChatList" resultMap="UserMessageResult">
+        SELECT um.id, um.sender_id, um.receiver_id, um.content, um.is_read, um.create_time,
+               su.nick_name as sender_name, su.avatar as sender_avatar,
+               ru.nick_name as receiver_name
+        FROM user_message um
+        LEFT JOIN content_user su ON um.sender_id = su.user_id
+        LEFT JOIN content_user ru ON um.receiver_id = ru.user_id
+        WHERE (um.sender_id = #{userId1} AND um.receiver_id = #{userId2})
+           OR (um.sender_id = #{userId2} AND um.receiver_id = #{userId1})
+        ORDER BY um.create_time ASC
+    </select>
+
+    <select id="selectRecentChats" resultType="java.util.Map">
+        SELECT
+            CASE WHEN um.sender_id = #{userId} THEN um.receiver_id ELSE um.sender_id END as friendId,
+            cu.nick_name as friendName,
+            cu.avatar as friendAvatar,
+            um.content as lastContent,
+            um.create_time as lastTime,
+            (SELECT COUNT(*) FROM user_message sub
+             WHERE sub.receiver_id = #{userId}
+               AND sub.sender_id = CASE WHEN um.sender_id = #{userId} THEN um.receiver_id ELSE um.sender_id END
+               AND sub.is_read = '0') as unread
+        FROM user_message um
+        INNER JOIN (
+            SELECT MAX(id) as max_id FROM user_message
+            WHERE sender_id = #{userId} OR receiver_id = #{userId}
+            GROUP BY CASE WHEN sender_id = #{userId} THEN receiver_id ELSE sender_id END
+        ) latest ON um.id = latest.max_id
+        LEFT JOIN content_user cu ON CASE WHEN um.sender_id = #{userId} THEN um.receiver_id ELSE um.sender_id END = cu.user_id
+        ORDER BY um.create_time DESC
+    </select>
+
+    <insert id="insertMessage" parameterType="com.ruoyi.content.domain.UserMessage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_message (sender_id, receiver_id, content, is_read, create_time)
+        VALUES (#{senderId}, #{receiverId}, #{content}, '0', sysdate())
+    </insert>
+
+    <update id="markAsRead">
+        UPDATE user_message SET is_read = '1'
+        WHERE receiver_id = #{receiverId} AND sender_id = #{senderId} AND is_read = '0'
+    </update>
+
+    <select id="selectUnreadCount" resultType="int">
+        SELECT COUNT(*) FROM user_message WHERE receiver_id = #{receiverId} AND is_read = '0'
+    </select>
+</mapper>

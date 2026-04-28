@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.content.mapper.ContentNotificationMapper">
+
+    <resultMap type="com.ruoyi.content.domain.ContentNotification" id="NotificationResult">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="fromUserId" column="from_user_id"/>
+        <result property="type" column="type"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="relatedId" column="related_id"/>
+        <result property="isRead" column="is_read"/>
+        <result property="createTime" column="create_time"/>
+        <result property="fromUserName" column="from_user_name"/>
+        <result property="fromUserAvatar" column="from_user_avatar"/>
+    </resultMap>
+
+    <select id="selectByUserId" resultMap="NotificationResult">
+        SELECT n.id, n.user_id, n.from_user_id, n.type, n.title, n.content,
+               n.related_id, n.is_read, n.create_time,
+               cu.nick_name as from_user_name, cu.avatar as from_user_avatar
+        FROM content_notification n
+        LEFT JOIN content_user cu ON n.from_user_id = cu.user_id
+        WHERE n.user_id = #{userId}
+        ORDER BY n.create_time DESC
+        LIMIT 50
+    </select>
+
+    <select id="selectUnreadCount" resultType="int">
+        SELECT COUNT(*) FROM content_notification
+        WHERE user_id = #{userId} AND is_read = '0'
+    </select>
+
+    <insert id="insertNotification" parameterType="com.ruoyi.content.domain.ContentNotification" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO content_notification (user_id, from_user_id, type, title, content, related_id, is_read, create_time)
+        VALUES (#{userId}, #{fromUserId}, #{type}, #{title}, #{content}, #{relatedId}, '0', sysdate())
+    </insert>
+
+    <update id="markAsRead">
+        UPDATE content_notification SET is_read = '1'
+        WHERE id = #{id} AND user_id = #{userId}
+    </update>
+
+    <update id="markAllAsRead">
+        UPDATE content_notification SET is_read = '1'
+        WHERE user_id = #{userId} AND is_read = '0'
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM content_notification WHERE id = #{id} AND user_id = #{userId}
+    </delete>
+
+</mapper>

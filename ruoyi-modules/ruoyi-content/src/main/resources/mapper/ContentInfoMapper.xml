@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.content.mapper.ContentInfoMapper">
+    
+    <resultMap type="ContentInfo" id="ContentInfoResult">
+        <result property="contentId"        column="content_id"        />
+        <result property="title"            column="title"             />
+        <result property="summary"          column="summary"           />
+        <result property="content"          column="content"           />
+        <result property="categoryId"       column="category_id"       />
+        <result property="author"           column="author"            />
+        <result property="coverImage"       column="cover_image"       />
+        <result property="contentType"      column="content_type"      />
+        <result property="status"           column="status"            />
+        <result property="viewCount"        column="view_count"        />
+        <result property="likeCount"        column="like_count"        />
+        <result property="commentCount"     column="comment_count"     />
+        <result property="shareCount"       column="share_count"       />
+        <result property="isRecommended"    column="is_recommended"    />
+        <result property="isTop"            column="is_top"            />
+        <result property="publishTime"      column="publish_time"      />
+        <result property="tags"             column="tags"              />
+        <result property="sourceUrl"        column="source_url"        />
+        <result property="createBy"         column="create_by"         />
+        <result property="createTime"       column="create_time"       />
+        <result property="updateBy"         column="update_by"         />
+        <result property="updateTime"       column="update_time"       />
+        <result property="remark"           column="remark"            />
+        <result property="categoryName"     column="category_name"     />
+        <result property="authorUserId"     column="author_user_id"    />
+    </resultMap>
+
+    <sql id="selectContentInfoVo">
+        select ci.content_id, ci.title, ci.summary, ci.content, ci.category_id, ci.author, ci.cover_image, ci.content_type, ci.status, ci.view_count, ci.like_count, ci.comment_count, ci.share_count, ci.is_recommended, ci.is_top, ci.publish_time, ci.tags, ci.source_url, ci.create_by, ci.create_time, ci.update_by, ci.update_time, ci.remark, cc.category_name, cu.user_id as author_user_id from content_info ci left join content_category cc on ci.category_id = cc.category_id left join content_user cu on ci.create_by = cu.user_name
+    </sql>
+
+    <select id="selectContentInfoList" parameterType="ContentInfo" resultMap="ContentInfoResult">
+        <include refid="selectContentInfoVo"/>
+        <where>  
+            <if test="title != null  and title != ''"> and ci.title like concat('%', #{title}, '%')</if>
+            <if test="categoryId != null "> and ci.category_id = #{categoryId}</if>
+            <if test="author != null  and author != ''"> and ci.author like concat('%', #{author}, '%')</if>
+            <if test="contentType != null  and contentType != ''"> and ci.content_type = #{contentType}</if>
+            <if test="status != null  and status != ''"> and ci.status = #{status}</if>
+            <if test="isRecommended != null  and isRecommended != ''"> and ci.is_recommended = #{isRecommended}</if>
+            <if test="isTop != null  and isTop != ''"> and ci.is_top = #{isTop}</if>
+            <if test="tags != null  and tags != ''"> and ci.tags like concat('%', #{tags}, '%')</if>
+        </where>
+        order by ci.is_top desc, ci.publish_time desc
+    </select>
+    
+    <select id="selectContentInfoListPublished" parameterType="ContentInfo" resultMap="ContentInfoResult">
+        <include refid="selectContentInfoVo"/>
+        <where>  
+            <if test="title != null  and title != ''"> and ci.title like concat('%', #{title}, '%')</if>
+            <if test="categoryId != null "> and ci.category_id = #{categoryId}</if>
+            <if test="author != null  and author != ''"> and ci.author like concat('%', #{author}, '%')</if>
+            <if test="contentType != null  and contentType != ''"> and ci.content_type = #{contentType}</if>
+            and ci.status = '0'
+            <if test="tags != null  and tags != ''"> and ci.tags like concat('%', #{tags}, '%')</if>
+        </where>
+        order by ci.is_top desc, ci.publish_time desc
+    </select>
+    
+    <select id="selectContentInfoListRecommended" resultMap="ContentInfoResult">
+        <include refid="selectContentInfoVo"/>
+        where ci.status = '0'
+        order by (
+            ci.view_count * 1 + ci.like_count * 5 + ci.comment_count * 8 + ci.share_count * 10
+            + CASE WHEN ci.is_recommended = '1' THEN 100 ELSE 0 END
+            + CASE WHEN ci.is_top = '1' THEN 200 ELSE 0 END
+            + CASE WHEN ci.publish_time > DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 50
+                   WHEN ci.publish_time > DATE_SUB(NOW(), INTERVAL 72 HOUR) THEN 20
+                   WHEN ci.publish_time > DATE_SUB(NOW(), INTERVAL 168 HOUR) THEN 5
+                   ELSE 0 END
+        ) desc, ci.publish_time desc
+        limit 20
+    </select>
+    
+    <select id="selectContentInfoListTop" resultMap="ContentInfoResult">
+        <include refid="selectContentInfoVo"/>
+        where ci.status = '0' and ci.is_top = '1'
+        order by ci.publish_time desc
+    </select>
+    
+    <select id="selectContentInfoListHot" parameterType="Integer" resultMap="ContentInfoResult">
+        <include refid="selectContentInfoVo"/>
+        where ci.status = '0'
+        order by (ci.view_count * 1 + ci.like_count * 5 + ci.comment_count * 8 + ci.share_count * 10) desc, ci.publish_time desc
+        limit #{limit}
+    </select>
+
+    <select id="selectContentInfoByCategoryHot" resultMap="ContentInfoResult">
+        <include refid="selectContentInfoVo"/>
+        where ci.status = '0' and ci.category_id = #{categoryId}
+        order by (ci.view_count * 1 + ci.like_count * 5 + ci.comment_count * 8 + ci.share_count * 10) desc, ci.publish_time desc
+        limit #{limit}
+    </select>
+
+    <select id="selectUserPreferredCategories" resultType="Long">
+        select content_id from content_view_history
+        where user_id = #{userId}
+        order by view_time desc
+        limit 50
+    </select>
+    
+    <select id="selectContentInfoListLatest" parameterType="Integer" resultMap="ContentInfoResult">
+        <include refid="selectContentInfoVo"/>
+        where ci.status = '0'
+        order by ci.publish_time desc
+        limit #{limit}
+    </select>
+    
+    <select id="selectContentInfoByContentId" parameterType="Long" resultMap="ContentInfoResult">
+        <include refid="selectContentInfoVo"/>
+        where ci.content_id = #{contentId}
+    </select>
+
+    <select id="searchContentInfo" parameterType="ContentInfo" resultMap="ContentInfoResult">
+        <include refid="selectContentInfoVo"/>
+        <where>
+            ci.status = '0'
+            <if test="title != null and title != ''"> and (ci.title like concat('%', #{title}, '%') or ci.summary like concat('%', #{title}, '%') or ci.tags like concat('%', #{title}, '%') or ci.author like concat('%', #{title}, '%'))</if>
+            <if test="categoryId != null"> and ci.category_id = #{categoryId}</if>
+            <if test="contentType != null and contentType != ''"> and ci.content_type = #{contentType}</if>
+        </where>
+        <choose>
+            <when test="sortBy == 'latest'">order by ci.publish_time desc</when>
+            <when test="sortBy == 'views'">order by ci.view_count desc, ci.publish_time desc</when>
+            <when test="sortBy == 'likes'">order by ci.like_count desc, ci.publish_time desc</when>
+            <otherwise>order by ci.is_top desc, ci.publish_time desc</otherwise>
+        </choose>
+    </select>
+        
+    <insert id="insertContentInfo" parameterType="ContentInfo" useGeneratedKeys="true" keyProperty="contentId">
+        insert into content_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="title != null and title != ''">title,</if>
+            <if test="summary != null">summary,</if>
+            <if test="content != null">content,</if>
+            <if test="categoryId != null">category_id,</if>
+            <if test="author != null">author,</if>
+            <if test="coverImage != null">cover_image,</if>
+            <if test="contentType != null">content_type,</if>
+            <if test="status != null">status,</if>
+            <if test="viewCount != null">view_count,</if>
+            <if test="likeCount != null">like_count,</if>
+            <if test="commentCount != null">comment_count,</if>
+            <if test="shareCount != null">share_count,</if>
+            <if test="isRecommended != null">is_recommended,</if>
+            <if test="isTop != null">is_top,</if>
+            <if test="publishTime != null">publish_time,</if>
+            <if test="tags != null">tags,</if>
+            <if test="sourceUrl != null">source_url,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="title != null and title != ''">#{title},</if>
+            <if test="summary != null">#{summary},</if>
+            <if test="content != null">#{content},</if>
+            <if test="categoryId != null">#{categoryId},</if>
+            <if test="author != null">#{author},</if>
+            <if test="coverImage != null">#{coverImage},</if>
+            <if test="contentType != null">#{contentType},</if>
+            <if test="status != null">#{status},</if>
+            <if test="viewCount != null">#{viewCount},</if>
+            <if test="likeCount != null">#{likeCount},</if>
+            <if test="commentCount != null">#{commentCount},</if>
+            <if test="shareCount != null">#{shareCount},</if>
+            <if test="isRecommended != null">#{isRecommended},</if>
+            <if test="isTop != null">#{isTop},</if>
+            <if test="publishTime != null">#{publishTime},</if>
+            <if test="tags != null">#{tags},</if>
+            <if test="sourceUrl != null">#{sourceUrl},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateContentInfo" parameterType="ContentInfo">
+        update content_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="summary != null">summary = #{summary},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="author != null">author = #{author},</if>
+            <if test="coverImage != null">cover_image = #{coverImage},</if>
+            <if test="contentType != null">content_type = #{contentType},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="viewCount != null">view_count = #{viewCount},</if>
+            <if test="likeCount != null">like_count = #{likeCount},</if>
+            <if test="commentCount != null">comment_count = #{commentCount},</if>
+            <if test="shareCount != null">share_count = #{shareCount},</if>
+            <if test="isRecommended != null">is_recommended = #{isRecommended},</if>
+            <if test="isTop != null">is_top = #{isTop},</if>
+            <if test="publishTime != null">publish_time = #{publishTime},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="sourceUrl != null">source_url = #{sourceUrl},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where content_id = #{contentId}
+    </update>
+
+    <update id="updateContentViewCount" parameterType="Long">
+        update content_info set view_count = view_count + 1 where content_id = #{contentId}
+    </update>
+
+    <update id="updateContentLikeCount" parameterType="map">
+        update content_info set like_count = GREATEST(like_count + #{increment}, 0) where content_id = #{contentId}
+    </update>
+
+    <update id="updateContentCommentCount" parameterType="Long">
+        update content_info set comment_count = comment_count + 1 where content_id = #{contentId}
+    </update>
+
+    <update id="decrementContentCommentCount" parameterType="Long">
+        update content_info set comment_count = GREATEST(comment_count - 1, 0) where content_id = #{contentId}
+    </update>
+
+    <update id="updateContentShareCount" parameterType="Long">
+        update content_info set share_count = share_count + 1 where content_id = #{contentId}
+    </update>
+
+    <delete id="deleteContentInfoByContentId" parameterType="Long">
+        delete from content_info where content_id = #{contentId}
+    </delete>
+
+    <delete id="deleteContentInfoByContentIds" parameterType="String">
+        delete from content_info where content_id in 
+        <foreach item="contentId" collection="array" open="(" separator="," close=")">
+            #{contentId}
+        </foreach>
+    </delete>
+
+    <select id="selectContentStats" resultType="map">
+        select
+            count(*) as total,
+            sum(case when status = '0' then 1 else 0 end) as approved,
+            sum(case when status = '1' then 1 else 0 end) as pending,
+            sum(case when status = '2' then 1 else 0 end) as rejected,
+            sum(case when date(create_time) = curdate() then 1 else 0 end) as todayNew,
+            coalesce(sum(view_count), 0) as totalViews,
+            coalesce(sum(like_count), 0) as totalLikes,
+            coalesce(sum(comment_count), 0) as totalComments
+        from content_info
+    </select>
+
+    <select id="selectContentTypeStats" resultType="map">
+        select
+            content_type as contentType,
+            count(*) as count
+        from content_info
+        where status = '0'
+        group by content_type
+    </select>
+
+    <select id="selectRecentContentStats" resultType="map">
+        select
+            date(create_time) as date,
+            count(*) as count
+        from content_info
+        where create_time >= date_sub(curdate(), interval 7 day)
+        group by date(create_time)
+        order by date(create_time) asc
+    </select>
+
+    <select id="selectContentRanking" resultMap="ContentInfoResult">
+        <include refid="selectContentInfoVo"/>
+        where ci.status = '0'
+        <if test="categoryId != null"> and ci.category_id = #{categoryId}</if>
+        <if test="period == 'week'"> and ci.publish_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)</if>
+        <if test="period == 'month'"> and ci.publish_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)</if>
+        order by (ci.view_count * 1 + ci.like_count * 5 + ci.comment_count * 8 + ci.share_count * 10) desc, ci.publish_time desc
+        limit #{limit}
+    </select>
+
+    <select id="selectRelatedContent" resultMap="ContentInfoResult">
+        <include refid="selectContentInfoVo"/>
+        where ci.status = '0' and ci.content_id != #{excludeId}
+        <if test="categoryId != null"> and ci.category_id = #{categoryId}</if>
+        order by
+            CASE WHEN ci.category_id = #{categoryId} THEN 0 ELSE 1 END,
+            (ci.view_count * 1 + ci.like_count * 5 + ci.comment_count * 8) desc,
+            ci.publish_time desc
+        limit #{limit}
+    </select>
+
+    <select id="selectHotTags" resultType="java.util.Map">
+        SELECT tag, COUNT(*) as count FROM (
+            SELECT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(ci.tags, ',', n.n), ',', -1)) as tag
+            FROM content_info ci
+            CROSS JOIN (SELECT 1 as n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
+                        UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10) n
+            WHERE ci.status = '0' AND ci.tags IS NOT NULL AND ci.tags != ''
+              AND n.n &lt;= LENGTH(ci.tags) - LENGTH(REPLACE(ci.tags, ',', '')) + 1
+        ) t
+        WHERE tag IS NOT NULL AND tag != ''
+        GROUP BY tag
+        ORDER BY count DESC
+        LIMIT 30
+    </select>
+
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*) FROM content_info WHERE create_by = (SELECT user_name FROM content_user WHERE user_id = #{userId}) AND status = '0'
+    </select>
+
+</mapper>

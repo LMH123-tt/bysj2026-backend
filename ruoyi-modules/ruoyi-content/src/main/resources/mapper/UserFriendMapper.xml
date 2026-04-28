@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.content.mapper.UserFriendMapper">
+
+    <resultMap type="com.ruoyi.content.domain.UserFriend" id="UserFriendResult">
+        <result property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="friendId" column="friend_id"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="friendName" column="friend_name"/>
+        <result property="friendAvatar" column="friend_avatar"/>
+    </resultMap>
+
+    <select id="selectFriendList" resultMap="UserFriendResult">
+        SELECT uf.id, uf.user_id, uf.friend_id, uf.status, uf.create_time,
+               cu.nick_name as friend_name, cu.avatar as friend_avatar
+        FROM user_friend uf
+        LEFT JOIN content_user cu ON uf.friend_id = cu.user_id
+        WHERE uf.user_id = #{userId}
+        <if test="status != null and status != ''"> AND uf.status = #{status}</if>
+        ORDER BY uf.create_time DESC
+    </select>
+
+    <select id="selectReceivedRequests" resultMap="UserFriendResult">
+        SELECT uf.id, uf.user_id, uf.friend_id, uf.status, uf.create_time,
+               cu.nick_name as friend_name, cu.avatar as friend_avatar
+        FROM user_friend uf
+        LEFT JOIN content_user cu ON uf.user_id = cu.user_id
+        WHERE uf.friend_id = #{userId} AND uf.status = '0'
+        ORDER BY uf.create_time DESC
+    </select>
+
+    <select id="selectFriendById" resultMap="UserFriendResult">
+        SELECT id, user_id, friend_id, status, create_time
+        FROM user_friend
+        WHERE user_id = #{userId} AND friend_id = #{friendId}
+    </select>
+
+    <insert id="insertFriend" parameterType="com.ruoyi.content.domain.UserFriend" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_friend (user_id, friend_id, status, create_time)
+        VALUES (#{userId}, #{friendId}, #{status}, sysdate())
+    </insert>
+
+    <update id="updateFriendStatus" parameterType="com.ruoyi.content.domain.UserFriend">
+        UPDATE user_friend SET status = #{status} WHERE user_id = #{userId} AND friend_id = #{friendId}
+    </update>
+
+    <delete id="deleteFriend">
+        DELETE FROM user_friend WHERE user_id = #{userId} AND friend_id = #{friendId}
+    </delete>
+
+    <select id="selectUnreadRequestCount" resultType="int">
+        SELECT COUNT(*) FROM user_friend WHERE friend_id = #{userId} AND status = '0'
+    </select>
+</mapper>
